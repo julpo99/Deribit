@@ -1,4 +1,4 @@
-# Mark Price Generator for Deribit Expiry
+# TASK 1: Mark Price Generator for Deribit Expiry
 
 ## Overview
 This Python application connects to Deribit’s WebSocket API and does the following:
@@ -156,6 +156,50 @@ JSON files named `prices_<timestamp>.json` saved to the `output/` directory, con
 - The code is not optimized for performance, but rather for clarity and maintainability.
 - More accurate functions could be added to calculate the mark price, at the cost of performance.
 - We assume that the code is run with python 3.12 or higher.
+
+
+
+# TASK 2: 
+
+
+
+
+
+json result below:
+
+```json
+{
+  "date": "2024-11-10",
+  "timestamp": 1731225600073,
+  "usd_values": {
+    "BTC_USDC": 4.084287655635,
+    "ETH_USDC": 4.26102655683,
+    "PAXG_USDC": 4.22347884176,
+    "SOL_USDC": 4.038685002,
+    "XRP_USDC": 4.270024680000001,
+    "ADA_USDC": 4.1787632
+  },
+  "average_usd_price": 4.1760443227041675,
+  "max_diff": 0.23133967800000033
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Requirements
 ```
