@@ -114,7 +114,8 @@ JSON files named `prices_<timestamp>.json` saved to the `output/` directory, con
 - We try to replicate the model and check if we get similar mark prices as the ones from Deribit.
 - After some testing, it seems that the Black76 model is more accurate than the mid-price calculation.
 - But we keep the first methos as default because it is faster and the purpose of the task 
-  was not to achieve the most accurate mark price. (It was actually required (Slide 2) to not attempt to match the 
+  was not to achieve the most accurate mark price. (It was actually required, as stated in Slide 2, to not attempt to 
+  match the 
   values to Deribit's mark price. But since I had plenty of time, I thought it would be a good idea to try to match them.
   Also, in slide 3, it was then mentioned that the grading criteria would be based on the difference between our 
   computed mark price and Deribit's mark price. So this was a bit confusing. So I thought it's a good idea to have 
