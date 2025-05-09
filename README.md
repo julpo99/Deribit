@@ -9,13 +9,29 @@ This Python application connects to Deribit’s WebSocket API and does the follo
 - Saves the output of the computed mark price in a json file and compares it with Deribit’s mark price for standard 
   strikes.
 
-## How to Run
+
+## Clone the Repository
 ```bash
 git clone https://github.com/julpo99/Deribit
+```
 
+## Install the requirements
+```bash
 pip install -r requirements.txt
+```
 
+## Run the Application (Examples)
+```bash
 python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800
+
+# For testnet
+python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800 --testnet
+
+# For Black76 model
+python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800 --black76
+
+# For Black76 model on testnet
+python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800 --testnet --black76
 
 ```
 
@@ -24,6 +40,10 @@ python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800
 - `--T1`: Total runtime in seconds
 - `--T2`: Interval in seconds between each computation
 - `--strikes`: A custom array of strike prices (as numbers)
+
+Optional Arguments:
+- `--testnet`: To use the testnet environment.
+- `--black76`: To use the Black-76 model for mark price calculation.
 
 ## Additional Toggles
 In the first lines of the `main.py` file, you can edit the following optional toggles:
