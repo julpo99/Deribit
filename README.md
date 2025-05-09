@@ -109,10 +109,10 @@ JSON files named `prices_<timestamp>.json` saved to the `output/` directory, con
 
 
 ## Additional Mark Price Calculation Method (Black76)
-- After some online research it seems that a variant of the Black-Scholes model is used (Black76) to calculate the mark 
+- After some online research, it seems that a variant of the Black-Scholes model is used (Black76) to calculate the mark 
   price.
 - We try to replicate the model and check if we get similar mark prices as the ones from Deribit.
-- After some testing it seems that the Black76 model is more accurate than the mid-price calculation.
+- After some testing, it seems that the Black76 model is more accurate than the mid-price calculation.
 - But we keep the first methos as default because it is faster and the purpose of the task 
   was not to achieve the most accurate mark price.
 - References:
@@ -121,10 +121,10 @@ JSON files named `prices_<timestamp>.json` saved to the `output/` directory, con
 
 ## Assumptions
 - Strike instruments may not always exist for all inputs; the closest available strike is selected in that case.
-- We assume a correct imput via command line arguments.
+- We assume a correct iput via command line arguments.
 - We only assume positive strikes.
 - The application works both on testnet and production, the testnet offered more edge cases to test the code.
-- A lot of checks could have been added, but I priorized clean code and readability over robustness.
+- A lot of checks could have been added, but we prioritized clean code and readability over robustness.
 - Regex for input validation could be added to ensure the expiry format is correct.
 - Many more try and catch could be added to ensure the code does not break in case of an error.
 - Mid-price is assumed to be a good and fast approximation of the mark price. 
