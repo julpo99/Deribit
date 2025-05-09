@@ -7,9 +7,6 @@ from pathlib import Path
 from client import DeribitClient
 from mark_price_calculator import compute_mid_price, compute_black76_mark_price
 
-USE_BLACK76 = False
-TESTNET = False
-
 
 def save_output(timestamp, data, output_dir="output"):
     Path(output_dir).mkdir(exist_ok=True)
@@ -22,7 +19,7 @@ async def main(args):
     # Create the Deribit client
     client = DeribitClient()
     # Connect to the Deribit WebSocket API
-    await client.connect(TESTNET)
+    await client.connect(args.testnet)
     # Load the instruments for the specified expiry
     await client.load_instruments(args.expiry)
 
@@ -33,7 +30,7 @@ async def main(args):
         output = {}
 
         # The timestamp could be converted to a human-readable format if needed
-        timestamp = int(time.time())
+        timestamp = time.time()
 
         for strike in args.strikes:
             # Get the call and put instruments for the given strike
@@ -49,7 +46,7 @@ async def main(args):
                     try:
                         book = await client.get_order_book(inst_name)
 
-                        if USE_BLACK76:
+                        if args.black76:
                             ticker = await client.get_ticker(inst_name)
                             computed_mark = compute_black76_mark_price(ticker, inst_data)
                             if computed_mark is None:
@@ -94,7 +91,7 @@ async def main(args):
                 output[str(strike)][option_type] = entry
 
                 # Add information about testnet or production
-                if TESTNET:
+                if args.testnet:
                     output[str(strike)][option_type]["testnet"] = True
                 else:
                     output[str(strike)][option_type]["testnet"] = False
@@ -110,9 +107,11 @@ if __name__ == "__main__":
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--expiry", type=str, required=True)
-    parser.add_argument("--T1", type=int, required=True)
-    parser.add_argument("--T2", type=int, required=True)
+    parser.add_argument("--T1", type=float, required=True)
+    parser.add_argument("--T2", type=float, required=True)
     parser.add_argument("--strikes", type=float, nargs="+", required=True)
+    parser.add_argument("--testnet", action="store_true", help="Use testnet instead of production")
+    parser.add_argument("--black76", action="store_true", help="Use Black-76 model for mark price calculation")
     args = parser.parse_args()
 
     # Run the main function as an asyncio task
