@@ -37,8 +37,8 @@ python task1/main.py --expiry 23MAY25 --T1 20 --T2 5 --strikes 96000 98000 99800
 
 ## Arguments
 - `--expiry`: Deribit expiry code (e.g., `23MAY25`)
-- `--T1`: Total runtime in seconds
-- `--T2`: Interval in seconds between each computation
+- `--T1`: Total runtime in seconds (can be float for sub-second precision)
+- `--T2`: Interval in seconds between each computation (can be float for sub-second precision)
 - `--strikes`: A custom array of strike prices (as numbers)
 
 Optional Arguments:
@@ -155,6 +155,7 @@ JSON files named `prices_<timestamp>.json` saved to the `output/` directory, con
 - Mid-price is assumed to be a good and fast approximation of the mark price. 
 - The code is not optimized for performance, but rather for clarity and maintainability.
 - More accurate functions could be added to calculate the mark price, at the cost of performance.
+- We assume that the code is run with python 3.12 or higher.
 
 ## Requirements
 ```
