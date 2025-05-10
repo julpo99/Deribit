@@ -3,44 +3,52 @@ import asyncio
 import json
 import time
 from pathlib import Path
+from typing import Dict, Any
 
 from client import DeribitClient
 from mark_price_calculator import compute_mid_price, compute_black76_mark_price
 
 
-def save_output(timestamp, data, output_dir="output"):
+def save_output(timestamp: float, data: Dict[str, Any], output_dir: str = "output") -> None:
+    """
+    Save computed option mark prices to a JSON file.
+
+    Args:
+        timestamp (float): UNIX timestamp used in the filename.
+        data (Dict[str, Any]): Computed data to be saved.
+        output_dir (str): Directory to store output files. Defaults to 'output'.
+    """
     Path(output_dir).mkdir(exist_ok=True)
     fname = f"{output_dir}/prices_{timestamp}.json"
     with open(fname, "w") as f:
         json.dump(data, f, indent=2)
 
 
-async def main(args):
-    # Create the Deribit client
+async def main(args: argparse.Namespace) -> None:
+    """
+    Connects to the Deribit WebSocket API and periodically fetches and computes mark prices
+    for call and put options at given strikes and expiry.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments.
+    """
     client = DeribitClient()
-    # Connect to the Deribit WebSocket API
     await client.connect(args.testnet)
-    # Load the instruments for the specified expiry
     await client.load_instruments(args.expiry)
 
     start_time = time.time()
 
-    # Run for T1 seconds
     while time.time() - start_time < args.T1:
-        output = {}
-
-        # The timestamp could be converted to a human-readable format if needed
+        output: Dict[str, Dict[str, Any]] = {}
         timestamp = time.time()
 
         for strike in args.strikes:
-            # Get the call and put instruments for the given strike
             call_inst, put_inst = client.get_call_put_instruments(strike)
             output[str(strike)] = {}
 
             for inst_name, option_type in [(call_inst, "call"), (put_inst, "put")]:
                 if inst_name:
                     inst_data = next((i for i in client.instruments if i["instrument_name"] == inst_name), None)
-
                     is_standard = inst_data and float(inst_data.get("strike", -1)) == strike
 
                     try:
@@ -54,22 +62,21 @@ async def main(args):
                         else:
                             computed_mark = compute_mid_price(book)
 
-                        # Round the computed mark to match the precision of the Deribit API, comment the line below
-                        # if you want full precision
                         computed_mark = round(computed_mark, 4)
 
-                        entry = {
-                            "is_standard": is_standard
-                        }
+                        entry = {"is_standard": is_standard}
 
                         if is_standard:
-                            entry["computed_mark"] = computed_mark
-                            deribit_mark = await client.get_mark_price(inst_name)
-                            entry["deribit_mark"] = deribit_mark
-                            entry["instrument"] = inst_name
+                            entry.update({
+                                "computed_mark": computed_mark,
+                                "deribit_mark": await client.get_mark_price(inst_name),
+                                "instrument": inst_name,
+                            })
                         else:
-                            entry["computed_mark"] = computed_mark
-                            entry["closest_instrument"] = inst_name
+                            entry.update({
+                                "computed_mark": computed_mark,
+                                "closest_instrument": inst_name,
+                            })
                             print(f"Strike {strike} {option_type}: closest instrument used → {inst_name}")
 
                     except Exception as e:
@@ -77,24 +84,19 @@ async def main(args):
                             "computed_mark": None,
                             "instrument": inst_name,
                             "is_standard": is_standard,
-                            "error": f"Failed to fetch data: {e}"
+                            "error": f"Failed to fetch data: {e}",
                         }
 
                 else:
                     entry = {
                         "computed_mark": None,
                         "error": "No matching Deribit instrument",
-                        "closest_instrument": inst_name
+                        "closest_instrument": inst_name,
                     }
                     print(f"Strike {strike} {option_type}: closest instrument used → {inst_name}")
 
+                entry["testnet"] = args.testnet
                 output[str(strike)][option_type] = entry
-
-                # Add information about testnet or production
-                if args.testnet:
-                    output[str(strike)][option_type]["testnet"] = True
-                else:
-                    output[str(strike)][option_type]["testnet"] = False
 
         save_output(timestamp, output)
         print(f"Saved mark prices at {timestamp}")
@@ -104,15 +106,13 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--expiry", type=str, required=True)
-    parser.add_argument("--T1", type=float, required=True)
-    parser.add_argument("--T2", type=float, required=True)
-    parser.add_argument("--strikes", type=float, nargs="+", required=True)
-    parser.add_argument("--testnet", action="store_true", help="Use testnet instead of production")
-    parser.add_argument("--black76", action="store_true", help="Use Black-76 model for mark price calculation")
-    args = parser.parse_args()
+    parser.add_argument("--expiry", type=str, required=True, help="Expiry date of the options (e.g., '30AUG24').")
+    parser.add_argument("--T1", type=float, required=True, help="Total runtime in seconds.")
+    parser.add_argument("--T2", type=float, required=True, help="Sleep interval between iterations in seconds.")
+    parser.add_argument("--strikes", type=float, nargs="+", required=True, help="List of strike prices to monitor.")
+    parser.add_argument("--testnet", action="store_true", help="Use Deribit testnet environment.")
+    parser.add_argument("--black76", action="store_true", help="Use Black-76 model for computing mark price.")
 
-    # Run the main function as an asyncio task
+    args = parser.parse_args()
     asyncio.run(main(args))

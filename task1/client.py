@@ -1,36 +1,59 @@
 import json
 import ssl
+from typing import List, Tuple, Optional
 
 import certifi
 import websockets
 
 
 class DeribitClient:
+    """
+    Async WebSocket client for interacting with Deribit's public API (testnet or mainnet).
+    Supports querying instruments, order books, and mark prices.
+    """
+
     def __init__(self):
+        """Initialize the client with empty WebSocket and instrument list."""
         self.ws = None
-        self.instruments = []
+        self.instruments: List[dict] = []
 
-    async def connect(self, testnet=False):
+    async def connect(self, testnet: bool = False) -> None:
+        """
+        Connect to the Deribit WebSocket API.
+
+        Args:
+            testnet (bool): Whether to connect to the testnet. If False, connects to mainnet.
+        """
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-        # The above line shouldn't be necessary, but my virtual environment was having issues with SSL
-        if testnet:
-            # Connect to the testnet
-            print(f'Connecting to testnet')
-            self.ws = await websockets.connect("wss://test.deribit.com/ws/api/v2", ssl=ssl_context)
-        else:
-            # Connect to the mainnet
-            self.ws = await websockets.connect("wss://www.deribit.com/ws/api/v2", ssl=ssl_context)
+        url = "wss://test.deribit.com/ws/api/v2" if testnet else "wss://www.deribit.com/ws/api/v2"
+        print(f"Connecting to {'testnet' if testnet else 'mainnet'}")
+        self.ws = await websockets.connect(url, ssl=ssl_context)
 
-    async def close(self):
+    async def close(self) -> None:
+        """Close the WebSocket connection."""
         await self.ws.close()
 
-    async def send(self, message):
+    async def send(self, message: dict) -> dict:
+        """
+        Send a message to the WebSocket API and receive the response.
+
+        Args:
+            message (dict): JSON-RPC message to send.
+
+        Returns:
+            dict: The parsed JSON response.
+        """
         await self.ws.send(json.dumps(message))
         response = await self.ws.recv()
         return json.loads(response)
 
-    async def load_instruments(self, expiry):
-        # we use the public API method to get the instruments
+    async def load_instruments(self, expiry: str) -> None:
+        """
+        Load all BTC option instruments for a given expiry.
+
+        Args:
+            expiry (str): Expiry string to match (e.g., "14JUN24").
+        """
         msg = {
             "jsonrpc": "2.0",
             "id": 1,
@@ -48,16 +71,17 @@ class DeribitClient:
             raise Exception(f"API Error: {response['error']}")
 
         self.instruments = [i for i in response["result"] if expiry in i["instrument_name"]]
-
         print(f"Loaded {len(self.instruments)} instruments for expiry {expiry}")
 
-    def get_call_put_instruments(self, strike):
+    def get_call_put_instruments(self, strike: float) -> Tuple[Optional[str], Optional[str]]:
         """
-        Get the closest call and put instruments for a given strike price. If possible, the function will return
-        the standard instrument (i.e., the one with the exact strike price). If not, it will return the closest
-        instrument available.
-        :param strike:
-        :return: closest_call, closest_put
+        Find the closest available call and put instruments for a given strike.
+
+        Args:
+            strike (float): Target strike price.
+
+        Returns:
+            Tuple[Optional[str], Optional[str]]: Tuple of closest call and put instrument names.
         """
         closest_call = None
         closest_put = None
@@ -76,12 +100,21 @@ class DeribitClient:
                 elif option_type == "put" and diff < min_put_diff:
                     min_put_diff = diff
                     closest_put = inst["instrument_name"]
-            except:
+            except (ValueError, TypeError):
                 continue
 
         return closest_call, closest_put
 
-    async def get_order_book(self, instrument):
+    async def get_order_book(self, instrument: str) -> dict:
+        """
+        Fetch the order book for a given instrument.
+
+        Args:
+            instrument (str): Instrument name.
+
+        Returns:
+            dict: Order book data.
+        """
         msg = {
             "jsonrpc": "2.0",
             "id": 42,
@@ -91,7 +124,16 @@ class DeribitClient:
         response = await self.send(msg)
         return response["result"]
 
-    async def get_mark_price(self, instrument):
+    async def get_mark_price(self, instrument: str) -> Optional[float]:
+        """
+        Fetch the mark price for a given instrument.
+
+        Args:
+            instrument (str): Instrument name.
+
+        Returns:
+            Optional[float]: The mark price, or None if unavailable.
+        """
         msg = {
             "jsonrpc": "2.0",
             "id": 43,
@@ -101,7 +143,16 @@ class DeribitClient:
         response = await self.send(msg)
         return response["result"].get("mark_price")
 
-    async def get_ticker(self, instrument):
+    async def get_ticker(self, instrument: str) -> dict:
+        """
+        Fetch the ticker info for a given instrument.
+
+        Args:
+            instrument (str): Instrument name.
+
+        Returns:
+            dict: Ticker data from Deribit.
+        """
         msg = {
             "jsonrpc": "2.0",
             "id": 44,
