@@ -1,7 +1,6 @@
-import datetime
 import json
 import ssl
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any, Hashable
 
 import certifi
 import pandas as pd
@@ -11,7 +10,7 @@ import yfinance as yf
 from config import CRYPTOS
 
 
-async def collect_data(ts_steps: List[int], is_testnet: bool = True) -> List[Tuple[str, List[Tuple[int, float, str]]]]:
+async def collect_data(ts_steps: List[int], is_testnet: bool = True) -> list[tuple[Hashable, list[tuple[Any, ...]]]]:
     """
     Collect settlement price data from the Deribit WebSocket API for a list of cryptocurrencies and timestamps.
 
@@ -20,62 +19,62 @@ async def collect_data(ts_steps: List[int], is_testnet: bool = True) -> List[Tup
         is_testnet (bool): Whether to use the testnet or the mainnet Deribit API. Defaults to True (testnet).
 
     Returns:
-        List[Tuple[str, List[Tuple[int, float, str]]]]:
+        List[Tuple[str, List[Hashable, list[tuple[Any, ...]]]]:
             A list where each element is a tuple containing a cryptocurrency symbol and its list of
             (timestamp, mark_price, human_readable_date) entries.
     """
+
     base = "test" if is_testnet else "www"
     url = f"wss://{base}.deribit.com/ws/api/v2"
     ssl_context = ssl.create_default_context(cafile=certifi.where())
 
-    entries_by_crypto = {crypto: [] for crypto in CRYPTOS}
-
     async with websockets.connect(url, ssl=ssl_context) as ws:
         requests = []
+        msg_ids = []
+
         for crypto in CRYPTOS:
             for ts in ts_steps:
-                instrument_name = f"{crypto}_USDC-PERPETUAL"
                 msg_id = f"{crypto}_{ts}"
                 msg = {
                     "jsonrpc": "2.0",
                     "id": msg_id,
                     "method": "public/get_last_settlements_by_instrument",
                     "params": {
-                        "instrument_name": instrument_name,
+                        "instrument_name": f"{crypto}_USDC-PERPETUAL",
                         "type": "settlement",
                         "count": 1000,
                         "search_start_timestamp": ts
                     }
                 }
-                requests.append((crypto, ts, msg))
+                requests.append(msg)
+                msg_ids.append((crypto, ts, msg_id))
                 await ws.send(json.dumps(msg))
 
         responses = {}
         for _ in range(len(requests)):
-            response = await ws.recv()
-            data = json.loads(response)
+            raw = await ws.recv()
+            data = json.loads(raw)
             responses[data["id"]] = data
 
-    for crypto, ts, msg in requests:
-        response = responses.get(msg["id"])
-        if not response:
-            print(f"[ERROR] Missing response for {crypto} at ts={ts}")
-            continue
-
-        result = response.get("result", {})
-        settlements = result.get("settlements", [])
+    records = []
+    for crypto, ts, msg_id in msg_ids:
+        response = responses.get(msg_id, {})
+        settlements = response.get("result", {}).get("settlements", [])
 
         if len(settlements) == 1000 and ts == ts_steps[-1]:
-            print(f"[ALERT] Last historical request for {crypto} hit 1000 limit. Older data may exist.")
+            print(f"[ALERT] {crypto} hit 1000-limit. More historical data may exist.")
 
         for entry in settlements:
-            entry_ts = entry.get("timestamp")
+            timestamp = entry.get("timestamp")
             price = entry.get("mark_price")
-            if entry_ts and price:
-                human_date = datetime.datetime.fromtimestamp(entry_ts / 1000, tz=datetime.UTC).isoformat()
-                entries_by_crypto[crypto].append((entry_ts, price, human_date))
+            if timestamp and price:
+                records.append((crypto, timestamp, price))
 
-    return [(crypto, entries) for crypto, entries in entries_by_crypto.items()]
+    df = pd.DataFrame(records, columns=["crypto", "timestamp", "price"])
+    df["date"] = pd.to_datetime(df["timestamp"], unit="ms").dt.date.astype(str)
+
+    grouped = df.groupby("crypto")[["timestamp", "price", "date"]]
+    return [(crypto, list(group.itertuples(index=False, name=None))) for crypto, group in grouped]
 
 
 def merge_data(results: List[Tuple[str, List[Tuple[int, float, str]]]], supplement_paxg: bool = False,

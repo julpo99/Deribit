@@ -6,7 +6,6 @@ from typing import Callable, Dict, List, Union, Optional
 
 import pandas as pd
 
-from config import DATA_DIR
 from data_collection import collect_data, merge_data
 from price_estimator import (
     estimate_price_std,
@@ -41,7 +40,7 @@ def parse_args() -> argparse.Namespace:
         help="Price estimation method: std, mad, or minmax (default: std)"
     )
     parser.add_argument(
-        "--supplement-paxg",
+        "--supplement-paxg-from-yahoo",
         action="store_true",
         help="Supplement missing PAXG values using Yahoo Finance closing prices"
     )
@@ -75,7 +74,7 @@ async def run_analysis(ts_steps: List[int],
                        method_func: Callable[[pd.DataFrame, str, bool], Dict[str, Union[int, str, float, Dict[str,
                        Optional[float]]]]],
                        save_debug: bool = False,
-                       supplement_paxg: bool = False,
+                       supplement_paxg_from_yahoo: bool = False,
                        supplement_paxg_from_testnet: bool = False) -> None:
     """
     Run the full pipeline: collect data, merge it, and estimate coconut price.
@@ -92,9 +91,9 @@ async def run_analysis(ts_steps: List[int],
         collect_data(ts_steps, is_testnet=False)
     )
 
-    df_test = merge_data(testnet_data, supplement_paxg=supplement_paxg)
+    df_test = merge_data(testnet_data, supplement_paxg=supplement_paxg_from_yahoo)
     df_main = merge_data(mainnet_data,
-                         supplement_paxg=supplement_paxg,
+                         supplement_paxg=supplement_paxg_from_yahoo,
                          supplement_paxg_from_testnet=supplement_paxg_from_testnet,
                          testnet_df=df_test if supplement_paxg_from_testnet else None)
 
@@ -111,6 +110,7 @@ async def run_analysis(ts_steps: List[int],
 
     print(f"\nThe King Coconut price in USD is estimated to be: ${best["price_usd"]:.4f}\n")
 
+
 def main() -> None:
     """
     Main entry point: parse args and run analysis.
@@ -118,15 +118,12 @@ def main() -> None:
     args = parse_args()
     ts_steps = generate_backdated_timestamps(args.steps, args.delta_years)
 
-    if args.debug:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-
     method_func = ESTIMATORS[args.method]
 
     asyncio.run(run_analysis(ts_steps,
                              method_func=method_func,
                              save_debug=args.debug,
-                             supplement_paxg=args.supplement_paxg,
+                             supplement_paxg_from_yahoo=args.supplement_paxg_from_yahoo,
                              supplement_paxg_from_testnet=args.supplement_paxg_from_testnet))
 
 
