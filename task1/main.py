@@ -8,18 +8,21 @@ from typing import Dict, Any
 from client import DeribitClient
 from mark_price_calculator import compute_mid_price, compute_black76_mark_price
 
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_OUTPUT_DIR = BASE_DIR / "output"
 
-def save_output(timestamp: float, data: Dict[str, Any], output_dir: str = "output") -> None:
+
+def save_output(timestamp: float, data: Dict[str, Any], output_dir: Path = DEFAULT_OUTPUT_DIR) -> None:
     """
     Save computed option mark prices to a JSON file.
 
     Args:
         timestamp (float): UNIX timestamp used in the filename.
         data (Dict[str, Any]): Computed data to be saved.
-        output_dir (str): Directory to store output files. Defaults to 'output'.
+        output_dir (Path): Directory to store output files. Defaults to 'task1/output'.
     """
-    Path(output_dir).mkdir(exist_ok=True)
-    fname = f"{output_dir}/prices_{timestamp}.json"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    fname = output_dir / f"prices_{timestamp}.json"
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
