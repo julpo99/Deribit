@@ -22,7 +22,7 @@ git clone https://github.com/julpo99/Deribit
 ## Install the requirements (if not already done)
 
 ```bash
-pip install -r requirements.txt
+pip install -r ../requirements.txt
 ```
 
 ## Run the Application (Examples)
