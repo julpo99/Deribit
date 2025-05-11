@@ -85,7 +85,8 @@ def merge_data(results: List[Tuple[str, List[Tuple[int, float, str]]]], suppleme
     Args:
         results (List[Tuple[str, List[Tuple[int, float, str]]]]):
             List of tuples containing symbol and corresponding settlement data.
-        supplement_paxg (bool): Whether to supplement missing PAXG values from Yahoo Finance.
+        supplement_paxg_from_yahoo (bool): Whether to supplement missing PAXG values from Yahoo Finance.
+        supplement_paxg_from_testnet (bool): Whether to use testnet data for PAXG supplementation.
 
     Returns:
         pd.DataFrame: A merged DataFrame where rows are timestamps and columns are crypto symbols,
@@ -121,7 +122,7 @@ def merge_data(results: List[Tuple[str, List[Tuple[int, float, str]]]], suppleme
         merged_df.drop(columns=["PAXG_testnet"], inplace=True)
         merged_df.set_index("timestamp", inplace=True)
 
-    # Supplement PAXG with daily close if required
+    # Supplement PAXG with yahoo Finance data if required
     if supplement_paxg and "PAXG" in CRYPTOS and merged_df["PAXG"].eq(0).any():
         min_ts, max_ts = merged_df.index.min(), merged_df.index.max()
         start = pd.to_datetime(min_ts, unit="ms").strftime("%Y-%m-%d")

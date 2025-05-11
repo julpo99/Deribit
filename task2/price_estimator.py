@@ -169,7 +169,7 @@ def estimate_price_min_max(merged_df: DataFrame, label: str, save_debug: bool = 
             "timestamp": timestamp,
             "date": human_date,
             "price_usd": avg_price,
-            "spread": spread_val,
+            "minmax": spread_val,
             "prices": {
                 f"{crypto}_USDC": (round(float(prices[i]), 6) if not np.isnan(prices[i]) else None)
                 for i, crypto in enumerate(CRYPTOS)
@@ -189,6 +189,6 @@ def estimate_price_min_max(merged_df: DataFrame, label: str, save_debug: bool = 
         print(f"Saved debug JSON to merged_prices_minmax_{label}.json")
         print(f"Saved merged numpy array to merged_prices_minmax_{label}.npy")
 
-    return {"timestamp": timestamp, "date": human_date, "price_usd": avg_price, "spread": spread_val,
+    return {"timestamp": timestamp, "date": human_date, "price_usd": avg_price, "minmax": spread_val,
             "prices": {f"{crypto}_USDC": (round(float(prices[i]), 6) if not np.isnan(prices[i]) else None) for i, crypto
                        in enumerate(CRYPTOS)}, "label" : label}
