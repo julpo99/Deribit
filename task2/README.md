@@ -215,6 +215,8 @@ strikes a practical balance between performance and maintainability.
 - We deliberately avoided using mainnet values to fill testnet data on critical dates (e.g., 2024-11-11), as doing so
   would have made the testnet result artificially identical to the mainnet result, undermining the validity of the
   comparison.
+- We assume that the code is run with python 3.12 or higher.
+
 
 ## Requirements
 
