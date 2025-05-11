@@ -85,12 +85,12 @@ The estimated **USD price of the King Coconut** is:
 
 This is obtained by using the **standard deviation minimization** method on the mainnet data with supplemented PAXG
 prices from
-the testnet. The same result is obtained when using the **mean absolute deviation minimization** method and the 
+the testnet. The same result is obtained when using the **mean absolute deviation minimization** method and the
 **min-max spread minimization** method.
 We obtained a lower standard deviation of **`0.005696`** with supplemented PAXG prices from the testnet, compared to
 the supplemented PAXG prices from Yahoo, which had a standard deviation of **`0.007329`**.
-(Without supplementation of the PAXG price, the obtained result was **`4.2101`**). _It might not be a coincidence
-that 4.20 is the result of our task..._
+(Without supplementation of the PAXG price, the obtained result was **`4.2101`**). _It’s hard to ignore the coincidence
+of 4.20 being the final result... (if considering only 2 decimal places without rounding)._
 
 The value was selected based on the date 2024-11-11, for which the converted coconut prices across all supported
 cryptocurrencies had the lowest standard deviation. This indicates the highest agreement across markets on the coconut’s
@@ -192,23 +192,30 @@ it takes to complete multiple WebSocket requests. The most computationally expen
 NumPy, and further overengineering would bring negligible benefit relative to the API call duration. The current setup
 strikes a practical balance between performance and maintainability.
 
-
-
 ## Assumptions
 
 - The coconut shop used the **previous day’s** Deribit **settlement price** as the reference USD value.
 - The photo of the coconut price was taken **sometime between 2021 and 2025**.
 - We assume the coconut price is greater than zero.
-- We assume the **correct price to consider is the `mark_price`** returned by Deribit’s `get_last_settlements_by_instrument` API function.
+- We assume the **correct price to consider is the `mark_price`** returned by Deribit’s
+  `get_last_settlements_by_instrument` API function.
 - We did **not investigate** the financial definitions of `mark_price` vs. `settlement_price` vs. `index_price`.
-  - Therefore, if a different price type was intended, the logic of the solution would still hold — only a different API field would need to be substituted.
-- We used **perpetual contracts** (e.g., `BTC_USDC-PERPETUAL`) based on their availability and continuity, although we can’t confirm this matches the market context of the original photo.
+    - Therefore, if a different price type was intended, the logic of the solution would still hold — only a different
+      API field would need to be substituted.
+- We used **perpetual contracts** (e.g., `BTC_USDC-PERPETUAL`) based on their availability and continuity, although we
+  can’t confirm this matches the market context of the original photo.
 - We assume the coconut had **non-zero price** (>0).
-- The approach assumes **no specific financial domain knowledge** is required. It’s purely based on statistical agreement among implied prices.
+- The approach assumes **no specific financial domain knowledge** is required. It’s purely based on statistical
+  agreement among implied prices.
 - When supplementing missing PAXG values:
-  - From **Yahoo Finance**, we used **closing prices**, shifted **one day backward** to align with Deribit timestamps (usually around 08:00 UTC).
-  - From **testnet**, we reused the PAXG value to supplement the mainnet **only** — not the other way around — to avoid circular dependencies and preserve the validity of the mainnet result.
-- We deliberately avoided using mainnet values to fill testnet data on critical dates (e.g., 2024-11-11), as doing so would have made the testnet result artificially identical to the mainnet result, undermining the validity of the comparison.
+    - From **Yahoo Finance**, we used **closing prices**, shifted **one day backward** to align with Deribit
+      timestamps (usually around 08:00 UTC).
+    - From **testnet**, we reused the PAXG value to supplement the mainnet **only** — not the other way around — to
+      avoid circular dependencies and preserve the validity of the mainnet result.
+- We deliberately avoided using mainnet values to fill testnet data on critical dates (e.g., 2024-11-11), as doing so
+  would have made the testnet result artificially identical to the mainnet result, undermining the validity of the
+  comparison.
+
 ## Requirements
 
 ```
